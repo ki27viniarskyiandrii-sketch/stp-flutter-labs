@@ -21,3 +21,5 @@ flutter test
 flutter build apk --debug
 maestro test .maestro/
 ```
+
+E2E сценарії Maestro запускаються в GitHub Actions на кожен pull request.
