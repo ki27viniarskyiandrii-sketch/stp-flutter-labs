@@ -1,0 +1,29 @@
+# Сценарій: успішний вхід і оформлення замовлення
+appId: ua.vtfk.lab12_shop
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Вхід"
+- tapOn:
+    id: "email_field"
+- inputText: "andrii@vtfk.ua"
+- tapOn:
+    id: "password_field"
+- inputText: "student123"
+- hideKeyboard
+- tapOn:
+    id: "login_button"
+- assertVisible: "Каталог"
+- assertVisible: "Вітаю, andrii!"
+- tapOn:
+    id: "add_1"
+- tapOn:
+    id: "add_2"
+- assertVisible: "Кошик (2)"
+- tapOn:
+    id: "cart_button"
+- assertVisible: "Разом: 65 грн"
+- tapOn:
+    id: "checkout_button"
+- assertVisible: "Замовлення оформлено"
+- assertVisible: "Номер: ORD-.*"

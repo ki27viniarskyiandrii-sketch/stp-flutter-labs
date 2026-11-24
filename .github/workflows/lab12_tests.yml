@@ -1,0 +1,80 @@
+name: lab12 tests
+
+on:
+  push:
+    paths:
+      - 'lab12_shop/**'
+      - '.github/workflows/lab12_tests.yml'
+  pull_request:
+    paths:
+      - 'lab12_shop/**'
+      - '.github/workflows/lab12_tests.yml'
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: lab12_shop
+
+jobs:
+  unit:
+    name: Unit і widget тести
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: lab12_shop/coverage/lcov.info
+
+  e2e:
+    name: E2E Maestro на емуляторі Android
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Увімкнути KVM для емулятора
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+        working-directory: .
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build apk --debug
+      - name: Встановити Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+        working-directory: .
+      - name: Запустити e2e на емуляторі
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          working-directory: lab12_shop
+          script: |
+            adb install -r build/app/outputs/flutter-apk/app-debug.apk
+            maestro test .maestro/ --format junit --output maestro-report.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: maestro-report
+          path: lab12_shop/maestro-report.xml
