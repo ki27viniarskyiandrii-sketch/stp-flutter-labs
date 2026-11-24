@@ -22,13 +22,16 @@ class PostsScreen extends StatelessWidget {
   final PostsRepository posts;
   final StorageRepository storage;
 
-  void _showError(BuildContext context, Object e) {
-    ScaffoldMessenger.of(context).showSnackBar(
+  void _showError(ScaffoldMessengerState messenger, Object e) {
+    messenger.showSnackBar(
       SnackBar(content: Text('$e'), backgroundColor: Colors.red.shade700),
     );
   }
 
   Future<void> _delete(BuildContext context, Post post) async {
+    // messenger беру одразу: Firestore спершу прибирає запис локально,
+    // і картка разом зі своїм context зникає ще до відмови сервера
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -40,7 +43,7 @@ class PostsScreen extends StatelessWidget {
         ],
       ),
     );
-    if (ok != true || !context.mounted) return;
+    if (ok != true) return;
     try {
       await posts.deletePost(post.id);
       // файл прибираємо тільки після того, як правила дозволили видалити документ
@@ -48,7 +51,7 @@ class PostsScreen extends StatelessWidget {
         await storage.delete(post.imagePath!).catchError((_) {});
       }
     } catch (e) {
-      if (context.mounted) _showError(context, e);
+      _showError(messenger, e);
     }
   }
 

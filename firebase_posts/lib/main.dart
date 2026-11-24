@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:material_ui/material_ui.dart';
 
 import 'data/auth_repository.dart';
@@ -13,6 +15,11 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // без цього виклику жоден сервіс Firebase не знає, до якого проєкту йти
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Хмарний Storage працює тільки на Blaze, тому фото йдуть в емулятор.
+  // Емулятор доступний через ту саму адресу, що і сторінка (tool/dev_server.js).
+  if (kIsWeb && const bool.fromEnvironment('STORAGE_EMULATOR')) {
+    await FirebaseStorage.instance.useStorageEmulator(Uri.base.host, 443);
+  }
   runApp(FirebasePostsApp(
     auth: AuthRepository(),
     posts: PostsRepository(),
