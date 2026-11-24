@@ -4,6 +4,7 @@ appId: ua.vtfk.lab12_shop
 - launchApp:
     clearState: true
 - assertVisible: "Вхід"
+- takeScreenshot: e2e_01_login
 - tapOn:
     id: "email_field"
 - inputText: "andrii@vtfk.ua"
@@ -11,6 +12,7 @@ appId: ua.vtfk.lab12_shop
     id: "password_field"
 - inputText: "student123"
 - hideKeyboard
+- takeScreenshot: e2e_02_filled
 - tapOn:
     id: "login_button"
 - assertVisible: "Каталог"
@@ -20,10 +22,13 @@ appId: ua.vtfk.lab12_shop
 - tapOn:
     id: "add_2"
 - assertVisible: "Кошик (2)"
+- takeScreenshot: e2e_03_catalog
 - tapOn:
     id: "cart_button"
 - assertVisible: "Разом: 65 грн"
+- takeScreenshot: e2e_04_cart
 - tapOn:
     id: "checkout_button"
 - assertVisible: "Замовлення оформлено"
 - assertVisible: "Номер: ORD-.*"
+- takeScreenshot: e2e_05_order
