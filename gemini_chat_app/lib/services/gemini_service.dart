@@ -38,12 +38,22 @@ class GeminiService {
         'x-goog-api-key': apiKey,
       };
 
+  /// Заголовок HTTP може містити тільки ASCII, тому ключ-заглушку
+  /// кирилицею або порожній ключ ловлю ще до запиту.
+  void _checkKey() {
+    if (apiKey.trim().isEmpty || apiKey.codeUnits.any((c) => c > 127)) {
+      throw const GeminiException(
+          'API-ключ не задано: вставте ключ у файл .env (GEMINI_API_KEY)');
+    }
+  }
+
   String _body(List<ChatMessage> history) => jsonEncode({
         'contents': history.where((m) => !m.isError).map((m) => m.toContent()).toList(),
       });
 
   /// Звичайний запит: відповідь приходить цілою.
   Future<String> generate(List<ChatMessage> history) async {
+    _checkKey();
     final uri = Uri.parse('$_base/$model:generateContent');
     try {
       final response = await _client
@@ -65,6 +75,7 @@ class GeminiService {
 
   /// Стрімінг (alt=sse): текст приходить частинами по мірі генерації.
   Stream<String> generateStream(List<ChatMessage> history) async* {
+    _checkKey();
     final uri = Uri.parse('$_base/$model:streamGenerateContent?alt=sse');
     final request = http.Request('POST', uri)
       ..headers.addAll(_headers)
@@ -122,7 +133,10 @@ class GeminiService {
     try {
       apiMessage = (jsonDecode(body) as Map)['error']?['message'] as String?;
     } catch (_) {}
+    // на невірний ключ Gemini відповідає 400 з причиною API_KEY_INVALID
+    final badKey = code == 400 && body.contains('API_KEY_INVALID');
     final text = switch (code) {
+      _ when badKey => 'Проблема з API-ключем: перевірте GEMINI_API_KEY',
       400 => 'Некоректний запит',
       401 || 403 => 'Проблема з API-ключем: перевірте GEMINI_API_KEY',
       404 => 'Модель $model не знайдена',

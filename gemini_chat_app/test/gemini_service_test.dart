@@ -65,6 +65,43 @@ void main() {
     });
   }
 
+  test('ключ-заглушка кирилицею не відправляється', () async {
+    var calls = 0;
+    final client = MockClient((_) async {
+      calls++;
+      return http.Response('', 200);
+    });
+    final service = GeminiService(apiKey: 'ваш_ключ_тут', client: client);
+
+    await expectLater(
+      service.generate(_history),
+      throwsA(isA<GeminiException>()
+          .having((e) => e.message, 'message', contains('API-ключ не задано'))),
+    );
+    expect(calls, 0);
+  });
+
+  test('400 з API_KEY_INVALID показується як проблема з ключем', () async {
+    final client = MockClient((_) async => http.Response(
+        jsonEncode({
+          'error': {
+            'code': 400,
+            'message': 'API key not valid. Please pass a valid API key.',
+            'details': [
+              {'reason': 'API_KEY_INVALID'},
+            ],
+          },
+        }),
+        400));
+    final service = GeminiService(apiKey: 'wrong-key', client: client);
+
+    await expectLater(
+      service.generate(_history),
+      throwsA(isA<GeminiException>()
+          .having((e) => e.message, 'message', startsWith('Проблема з API-ключем'))),
+    );
+  });
+
   test('generateStream: збирає частини SSE, навіть розірвані між чанками', () async {
     final event1 = 'data: ${_answer('Пер')}\r\n\r\n';
     final event2 = 'data: ${_answer('ший ')}\r\n\r\n';
