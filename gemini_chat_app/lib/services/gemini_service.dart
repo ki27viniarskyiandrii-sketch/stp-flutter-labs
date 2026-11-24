@@ -98,16 +98,29 @@ class GeminiService {
     }
 
     // LineSplitter збирає рядок, навіть якщо він прийшов у двох шматках потоку.
+    // timeout спрацює, якщо сервер замовк посеред відповіді.
     final lines = response.stream
         .transform(utf8.decoder)
-        .transform(const LineSplitter());
-    await for (final line in lines) {
-      if (!line.startsWith('data: ')) continue;
-      final payload = line.substring(6).trim();
-      if (payload.isEmpty) continue;
-      final data = jsonDecode(payload) as Map<String, dynamic>;
-      final text = _textFrom(data, allowEmpty: true);
-      if (text.isNotEmpty) yield text;
+        .transform(const LineSplitter())
+        .timeout(timeout);
+    try {
+      await for (final line in lines) {
+        if (!line.startsWith('data: ')) continue;
+        final payload = line.substring(6).trim();
+        if (payload.isEmpty) continue;
+        final data = jsonDecode(payload) as Map<String, dynamic>;
+        // статус уже був 200, але помилка може прийти посеред стріму
+        final error = data['error'];
+        if (error is Map) {
+          throw _errorFor(error['code'] as int? ?? 500, payload);
+        }
+        final text = _textFrom(data, allowEmpty: true);
+        if (text.isNotEmpty) yield text;
+      }
+    } on TimeoutException {
+      throw const GeminiException('Сервер перестав надсилати відповідь');
+    } on http.ClientException catch (e) {
+      throw GeminiException('Зв\'язок обірвався: ${e.message}');
     }
   }
 

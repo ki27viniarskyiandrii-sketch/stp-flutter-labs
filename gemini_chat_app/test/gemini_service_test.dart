@@ -123,6 +123,30 @@ void main() {
     expect(parts.join(), 'Перший шматок');
   });
 
+  test('generateStream: помилка 503 посеред стріму не губиться', () async {
+    final ok = 'data: ${_answer('Ось 5 пунктів')}\r\n\r\n';
+    final err = 'data: ${jsonEncode({
+          'error': {
+            'code': 503,
+            'message': 'high demand',
+            'status': 'UNAVAILABLE',
+          },
+        })}\r\n\r\n';
+    final client = MockClient.streaming((request, _) async =>
+        http.StreamedResponse(Stream.value(utf8.encode(ok + err)), 200));
+    final service = GeminiService(apiKey: 'k', client: client);
+
+    final parts = <String>[];
+    await expectLater(
+      service.generateStream(_history).forEach(parts.add),
+      throwsA(isA<GeminiException>()
+          .having((e) => e.statusCode, 'statusCode', 503)
+          .having((e) => e.message, 'message', contains('high demand'))),
+    );
+    // те, що встигло прийти, лишається
+    expect(parts, ['Ось 5 пунктів']);
+  });
+
   test('повідомлення з помилкою не йдуть в історію запиту', () async {
     late Map body;
     final client = MockClient((request) async {

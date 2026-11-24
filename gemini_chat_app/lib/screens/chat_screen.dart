@@ -66,6 +66,9 @@ class _ChatScreenState extends State<ChatScreen> {
       }
     } on GeminiException catch (e) {
       _showError(e.message);
+    } catch (e) {
+      // щоб чат не завис на крутилці через непередбачену помилку
+      _showError('Неочікувана помилка: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
       _scrollToEnd();
@@ -89,7 +92,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _messages[index] =
             _messages[index].copyWith(text: formatModelText(buffer.toString()));
       });
-    } on GeminiException {
+    } catch (_) {
       // порожню бульбашку прибираю, помилку покаже _send
       if (buffer.isEmpty) setState(() => _messages.removeAt(index));
       rethrow;
