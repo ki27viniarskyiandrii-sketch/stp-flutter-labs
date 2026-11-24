@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "422465951066",
+    "project_id": "stp-firebase-posts",
+    "storage_bucket": "stp-firebase-posts.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:422465951066:android:95d2672cbc2578f7d98f63",
+        "android_client_info": {
+          "package_name": "ua.vtfk.firebase_posts"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCERh9szSZyAKgxao8LMsSppY3wAUZKhdc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
